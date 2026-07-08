@@ -1,0 +1,7 @@
+namespace vespa.protocol;
+
+table Event {
+  topic: string;
+  timestamp: ulong;
+  data: [ubyte];
+}

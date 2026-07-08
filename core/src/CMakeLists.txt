@@ -1,0 +1,4 @@
+file(GLOB VESPA_CORE_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+target_sources(vespa-core PUBLIC ${VESPA_CORE_SOURCES})

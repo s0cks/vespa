@@ -1,0 +1,10 @@
+#ifndef VESPA_H
+#define VESPA_H
+
+// clang-format off
+#define VESPA_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define VESPA_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define VESPA_VERSION_PATCH @PROJECT_VERSION_PATCH@
+// clang-format on
+
+#endif  // VESPA_H

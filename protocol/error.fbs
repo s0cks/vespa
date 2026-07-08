@@ -1,0 +1,11 @@
+namespace vespa.protocol;
+
+enum Status : ulong {
+  Ok,
+  Error,
+}
+
+table Error {
+  status: Status;
+  data: [ubyte];
+}

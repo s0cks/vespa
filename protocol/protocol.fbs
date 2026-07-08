@@ -1,0 +1,16 @@
+include "error.fbs";
+include "event.fbs";
+
+namespace vespa.protocol;
+
+union Payload {
+  Error,
+  Event
+}
+
+table Message {
+  id: ulong;
+  payload: Payload;
+}
+
+root_type Message;

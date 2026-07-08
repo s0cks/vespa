@@ -1,0 +1,38 @@
+version: '3'
+vars:
+  BIN_DIR: "{{.ROOT_DIR}}/bin"
+  BUILD_DIR: "{{.ROOT_DIR}}/build"
+tasks:
+  cmake:build-target:
+    dir: "{{.BUILD_DIR}}/"
+    internal: true
+    cmds:
+      - cmake --build . --target {{.TARGET}}
+  cmake:configure:
+    internal: true
+    cmds:
+      - cmake --preset={{.CMAKE_PRESET}} {{.ROOT_DIR}}
+  configure:
+    cmds:
+      - task: cmake:configure
+        vars:
+          CMAKE_PRESET: "{{.CLI_ARGS}}"
+  configure:debug:
+    cmds:
+      - task: cmake:configure
+        vars:
+          CMAKE_PRESET: "debug"
+  build:
+    cmds:
+      - task: cmake:build-target
+        vars:
+          TARGET: all
+  clean:
+    dir: "{{.BUILD_DIR}}/"
+    cmds:
+      - task: cmake:build-target
+        vars:
+          TARGET: clean
+  default:
+    cmds:
+      - task: build
