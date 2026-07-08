@@ -1,6 +1,13 @@
 {
   "dependencies": [
     "libuv",
-    "flatcc"
+    "flatcc",
+    "harfbuzz",
+    "tweeny",
+    "jsonnet",
+    "freetype",
+    "libpng",
+    "glm",
+    "libjpeg-turbo"
   ]
 }
