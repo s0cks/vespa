@@ -85,10 +85,10 @@ int main(int argc, char** argv) {
     fprintf(stderr, "error: failed to add numbers\n");
     goto failed;
   }
+  fprintf(stdout, "result: %d\n", (int)value);
 
 success:
   result = EXIT_SUCCESS;
-  fprintf(stdout, "result: %d\n", (int)value);
   goto finished;
 failed:
   result = EXIT_FAILURE;

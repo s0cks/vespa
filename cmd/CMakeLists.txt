@@ -1,0 +1,5 @@
+add_subdirectory(queen/)
+add_subdirectory(hive/)
+add_subdirectory(comb/)
+add_subdirectory(worker/)
+add_subdirectory(cli/)
