@@ -24,7 +24,7 @@ static inline void PrintBsonAsJson(FILE* stream, bson_t* B) {
   uint64_t len = 0;
   char* json_string = bson_as_canonical_extended_json(B, &len);
   if (json_string) {
-    fprintf(stream, "bson:\n%s\n\n", json_string);
+    fprintf(stream, "%s", json_string);
     bson_free(json_string);
   }
 }
@@ -65,8 +65,6 @@ static inline void ReadMessageFromBytes(Message* message, const uint8_t* bytes, 
     LOG_ERROR("message is not valid");
     return;
   }
-
-  PrintBsonAsJson(stdout, &message_doc);
 
   ReadMessage(&message_doc, message);
 }

@@ -46,30 +46,51 @@ static inline void on_write(uv_write_t* req, int status) {
   }
 
   write_req_t* wr = (write_req_t*)req->data;
-  if (wr)
+  if (wr) {
+    bson_destroy(&wr->doc);
     free(wr);
-  LOG_DEBUG("message sent");
+  }
+
+  LOG_DEBUG("message sent:");
+#ifdef VESPA_DEBUG
+  PrintBsonAsJson(stdout, &wr->doc);
+  fprintf(stdout, "\n");
+#endif  // VESPA_DEBUG
+}
+
+static inline char* DigestToStr(const uint8_t* bytes, const uint64_t nbytes) {
+  char* digest = malloc(sizeof(char) * nbytes + 1);
+  if (!digest)
+    return NULL;
+
+  memcpy(digest, bytes, nbytes);
+  digest[nbytes] = '\0';
+  return digest;
 }
 
 static inline void OnRead(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf) {
   if (nread > 0) {
     Message message;
     ReadMessageFromBytes(&message, (const uint8_t*)buf->base, nread);
-
     Client* c = (Client*)client->data;
-
     switch (message.kind) {
       case kPingKind: {
-        LOG_DEBUG("received ping");
-        char* digest = malloc(sizeof(char) * message.ping.digest_len + 1);
-        memcpy(digest, message.ping.digest, message.ping.digest_len);
-        digest[message.ping.digest_len] = '\0';
-        LOG_INFO("ping: %s\n", (const char*)digest);
+        uint8_t* bytes = message.ping.digest;
+        uint64_t nbytes = message.ping.digest_len;
+
+        char* digest = DigestToStr(bytes, nbytes);
+        if (!digest) {
+          LOG_ERROR("failed to get digest str from ping");
+          exit(1);
+        }
+        LOG_DEBUG("received ping: %s\n", (const char*)digest);
 
         Message pong;
-        InitPongMessage(&pong, (uint8_t*)digest, message.ping.digest_len);
+        InitPongMessage(&pong, bytes, nbytes);
         WriteMessageToStream(c, client, &pong, &on_write);
-        free(digest);
+
+        if (digest)
+          free(digest);
         break;
       }
       case kPongKind: {

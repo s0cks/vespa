@@ -47,10 +47,6 @@ DEFINE_WRITE(Message) {
       fprintf(stderr, "error: invalid Message kind: %d\n", (int)p->kind);
       exit(1);
   }
-
-#ifdef VESPA_DEBUG
-  PrintBsonAsJson(stdout, B);
-#endif  // VESPA_DEBUG
 }
 
 #define _BEGIN_FIELD_ITERATOR(B, Name, KeyName, TypeName) \
