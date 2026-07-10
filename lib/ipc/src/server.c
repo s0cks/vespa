@@ -4,25 +4,22 @@
 
 #include "common.h"
 #include "ipc.h"
+#include "log.h"
 
 #define CLIENT_HANDLE &client->handle
 
-typedef struct {
-  uv_pipe_t handle;
-  IpcServer* owner;
-} Client;
-
-static inline void ClientInit(Client* client, IpcServer* owner) {
+static inline void ClientInit(IpcServerClient* client, IpcServer* owner) {
+  client->owner = owner;
   uv_pipe_init(owner->loop, &client->handle, 0);
   client->handle.data = client;
 }
 
 static inline void OnCloseClient(uv_handle_t* handle) {
-  Client* client = (Client*)handle->data;
+  IpcServerClient* client = (IpcServerClient*)handle->data;
   IPC_FREE_FUNC(client);
 }
 
-static inline void CloseClient(Client* client) {
+static inline void CloseClient(IpcServerClient* client) {
   uv_close((uv_handle_t*)&client->handle, &OnCloseClient);
 }
 
@@ -39,7 +36,7 @@ finished:
   return success;
 }
 
-static inline void on_write(uv_write_t* req, int status) {
+static inline void OnWrite(uv_write_t* req, int status) {
   if (status < 0) {
     LOG_ERROR("failed to write: %s", uv_strerror(status));
     return;
@@ -51,46 +48,33 @@ static inline void on_write(uv_write_t* req, int status) {
     free(wr);
   }
 
-  LOG_DEBUG("message sent:");
 #ifdef VESPA_DEBUG
+  LOG_INFO("message sent:");
   PrintBsonAsJson(stdout, &wr->doc);
   fprintf(stdout, "\n");
 #endif  // VESPA_DEBUG
 }
 
-static inline char* DigestToStr(const uint8_t* bytes, const uint64_t nbytes) {
-  char* digest = malloc(sizeof(char) * nbytes + 1);
-  if (!digest)
-    return NULL;
-
-  memcpy(digest, bytes, nbytes);
-  digest[nbytes] = '\0';
-  return digest;
-}
-
 static inline void OnRead(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf) {
   if (nread > 0) {
-    Message message;
-    ReadMessageFromBytes(&message, (const uint8_t*)buf->base, nread);
-    Client* c = (Client*)client->data;
-    switch (message.kind) {
-      case kPingKind: {
-        uint8_t* bytes = message.ping.digest;
-        uint64_t nbytes = message.ping.digest_len;
+    Message* message = malloc(sizeof(Message));
+    if (!ReadMessageFromBytes(message, (const uint8_t*)buf->base, nread)) {
+      LOG_ERROR("failed to read valid message from client");
+      exit(1);
+    }
 
-        char* digest = DigestToStr(bytes, nbytes);
-        if (!digest) {
-          LOG_ERROR("failed to get digest str from ping");
+    IpcServerClient* c = (IpcServerClient*)client->data;
+    IpcServer* server = c->owner;
+    switch (message->kind) {
+      case kPingKind: {
+        bool success = true;
+        if (server->OnPing)
+          success = server->OnPing(c, message);
+
+        if (!success) {
+          LOG_ERROR("failed to respond to ping");
           exit(1);
         }
-        LOG_DEBUG("received ping: %s\n", (const char*)digest);
-
-        Message pong;
-        InitPongMessage(&pong, bytes, nbytes);
-        WriteMessageToStream(c, client, &pong, &on_write);
-
-        if (digest)
-          free(digest);
         break;
       }
       case kPongKind: {
@@ -98,18 +82,23 @@ static inline void OnRead(uv_stream_t* client, ssize_t nread, const uv_buf_t* bu
         break;
       }
       default:
-        LOG_ERROR("invalid message kind: %d", (int)message.kind);
+        LOG_ERROR("invalid message kind: %d", (int)message->kind);
     }
   } else if (nread < 0) {
     if (nread != UV_EOF)
       LOG_ERROR("read failure: %s", uv_err_name(nread));
-    CloseClient((Client*)client->data);
+    CloseClient((IpcServerClient*)client->data);
   }
 
   FreeBuffer(buf);
 }
 
-static inline void IpcServerAccept(uv_stream_t* stream, Client* client) {
+bool IpcServerClientWrite(IpcServerClient* client, Message* msg) {
+  WriteMessageToStream(client, (uv_stream_t*)&client->handle, msg, &OnWrite);
+  return true;
+}
+
+static inline void Accept(uv_stream_t* stream, IpcServerClient* client) {
   if (uv_accept(stream, (uv_stream_t*)CLIENT_HANDLE) == 0) {
     uv_read_start((uv_stream_t*)CLIENT_HANDLE, &AllocBuffer, &OnRead);
   } else {
@@ -120,10 +109,10 @@ static inline void IpcServerAccept(uv_stream_t* stream, Client* client) {
 static inline void OnNewConnection(uv_stream_t* handle, int status) {
   if (status < 0)
     CHECK_UV(status, "new connection failed");
-  IpcServer* server = (IpcServer*)handle->data;
-  Client* client = (Client*)malloc(sizeof(Client));
-  ClientInit(client, server);
-  IpcServerAccept(handle, client);
+
+  IpcServerClient* client = (IpcServerClient*)malloc(sizeof(IpcServerClient));
+  ClientInit(client, (IpcServer*)handle->data);
+  Accept(handle, client);
 }
 
 #define SERVER_HANDLE &server->handle

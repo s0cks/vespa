@@ -127,7 +127,16 @@ void ReadMessage(bson_t* B, Message* p);
   uv_pipe_t handle;
 
 typedef struct {
+  uv_pipe_t handle;
+  struct _IpcServer* owner;
+} IpcServerClient;
+
+bool IpcServerClientWrite(IpcServerClient* client, Message* msg);
+
+typedef struct _IpcServer {
   DEFINE_IPC_HANDLE_FIELDS;
+
+  bool (*OnPing)(IpcServerClient*, Message*);
 } IpcServer;
 
 bool IpcServerRun(IpcServer* server, const uv_run_mode mode);

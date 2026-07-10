@@ -5,6 +5,7 @@
 
 #include "common.h"
 #include "ipc.h"
+#include "log.h"
 
 bool IpcClientRun(IpcClient* client, const uv_run_mode mode) {
   bool success = false;

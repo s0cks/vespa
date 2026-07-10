@@ -4,21 +4,7 @@
 #include <stdio.h>
 
 #include "ipc.h"
-
-#define _LOG_TO_STREAM(Stream, format, ...) fprintf(Stream, "[%s:%d] " format "\n", __FILE__, __LINE__, ##__VA_ARGS__)
-
-#define LOG_INFO(format, ...)               _LOG_TO_STREAM(stdout, format, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...)              _LOG_TO_STREAM(stderr, "error: " format, ##__VA_ARGS__)
-
-#ifdef VESPA_DEBUG
-
-#define LOG_DEBUG(format, ...) LOG_INFO(format, ##__VA_ARGS__)
-
-#else
-
-#define LOG_DEBUG(format, ...)
-
-#endif  // VESPA_DEBUG
+#include "log.h"
 
 static inline void PrintBsonAsJson(FILE* stream, bson_t* B) {
   uint64_t len = 0;
@@ -54,19 +40,20 @@ static inline void FreeBuffer(const uv_buf_t* buf) {
     IPC_FREE_FUNC(buf->base);
 }
 
-static inline void ReadMessageFromBytes(Message* message, const uint8_t* bytes, const uint64_t nbytes) {
+static inline bool ReadMessageFromBytes(Message* message, const uint8_t* bytes, const uint64_t nbytes) {
   bson_t message_doc;
   if (!bson_init_static(&message_doc, bytes, nbytes)) {
     LOG_ERROR("failed to initialize bson doc");
-    return;
+    return false;
   }
 
   if (!bson_validate(&message_doc, BSON_VALIDATE_NONE, NULL)) {
     LOG_ERROR("message is not valid");
-    return;
+    return false;
   }
 
   ReadMessage(&message_doc, message);
+  return true;
 }
 
 static inline void WriteMessageToStream(void* data, uv_stream_t* stream, Message* m, uv_write_cb on_write) {

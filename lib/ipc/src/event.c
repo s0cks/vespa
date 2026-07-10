@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "ipc.h"
+#include "log.h"
 
 #define DEFINE_WRITE(Name) void Write##Name(Name* p, bson_t* B)
 
