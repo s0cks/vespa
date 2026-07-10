@@ -92,7 +92,7 @@ static inline void IpcServerAccept(uv_stream_t* stream, Client* client) {
   if (uv_accept(stream, (uv_stream_t*)CLIENT_HANDLE) == 0) {
     uv_read_start((uv_stream_t*)CLIENT_HANDLE, &AllocBuffer, &OnRead);
   } else {
-    uv_close((uv_handle_t*)CLIENT_HANDLE, NULL);
+    CloseClient(client);
   }
 }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"flag"
 	"fmt"
@@ -11,58 +12,21 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-)
-
-type Payload interface {
-	isMessagePayload()
-}
-
-type PingPayload struct {
-	Digest []byte `bson:"digest"`
-}
-
-func (PingPayload) isMessagePayload() {}
-
-type PongPayload struct {
-	Digest []byte `bson:"digest"`
-}
-
-func (PongPayload) isMessagePayload() {}
-
-type EventPayload struct {
-	Topic string `bson:"topic"`
-}
-
-func (EventPayload) isMessagePayload() {}
-
-type Message struct {
-	Kind      int32     `bson:"kind"`
-	Timestamp time.Time `bson:"timestamp"`
-	Data      bson.Raw  `bson:"data"`
-}
-
-type MessageKind int
-
-const (
-	Invaild MessageKind = iota
-	Event
-	Error
-	Ping
-	Pong
+	"vespa/internal/ipc"
 )
 
 const DEFAULT_SOCKET_PATH = "/tmp/ipc_test.sock"
 
-func sendPing(conn net.Conn) {
+func sendPing(conn net.Conn, digest []byte) {
 	payload := struct {
-		Kind      int32       `bson:"kind"`
-		Timestamp time.Time   `bson:"timestamp"`
-		Data      PingPayload `bson:"data"`
+		Kind      int32           `bson:"kind"`
+		Timestamp time.Time       `bson:"timestamp"`
+		Data      ipc.PingPayload `bson:"data"`
 	}{
-		Kind:      int32(Ping),
+		Kind:      int32(ipc.Ping),
 		Timestamp: time.Now(),
-		Data: PingPayload{
-			Digest: []byte("Hello World"),
+		Data: ipc.PingPayload{
+			Digest: digest,
 		},
 	}
 
@@ -75,8 +39,6 @@ func sendPing(conn net.Conn) {
 	if err != nil {
 		log.Fatalf("Failed to write to socket: %v", err)
 	}
-
-	fmt.Printf("Successfully sent %d bytes of bson data\n", len(bsonBytes))
 }
 
 var ValidCommands = []string{
@@ -96,7 +58,7 @@ func invalidCommand(cmd string) {
 	os.Exit(1)
 }
 
-func readMessage(conn net.Conn) (*Message, error) {
+func readMessage(conn net.Conn) (*ipc.Message, error) {
 	var lengthBytes [4]byte
 	_, err := io.ReadFull(conn, lengthBytes[:])
 	if err != nil {
@@ -116,7 +78,7 @@ func readMessage(conn net.Conn) (*Message, error) {
 		return nil, fmt.Errorf("failed to read full bson document: %v", err)
 	}
 
-	var m Message
+	var m ipc.Message
 	err = bson.Unmarshal(buffer, &m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal bson document: %v", err)
@@ -125,10 +87,45 @@ func readMessage(conn net.Conn) (*Message, error) {
 	return &m, nil
 }
 
-func main() {
-	pingCmd := flag.NewFlagSet("ping", flag.ExitOnError)
+func decodePong(conn net.Conn) (*ipc.PongPayload, error) {
+	m, err := readMessage(conn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %v", err)
+	}
 
-	getPingSocketPath := pingCmd.String("socket-path", "", "The unix socket path to connect to")
+	if m.Kind != int32(ipc.Pong) {
+		return nil, fmt.Errorf("invalid response message: %d", ipc.MessageKind(m.Kind))
+	}
+
+	var payload ipc.PongPayload
+	if err := bson.Unmarshal(m.Data, &payload); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal pong: %v", err)
+	}
+
+	return &payload, nil
+}
+
+func ping(conn net.Conn, digest []byte) ([]byte, error) {
+	sendPing(conn, []byte(digest))
+	pong, err := decodePong(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	if !bytes.Equal(digest, pong.Digest) {
+		return nil, fmt.Errorf("pong digest does not equal ping: %s != %s", string(digest), string(pong.Digest))
+	}
+
+	return pong.Digest, nil
+}
+
+func main() {
+	getSocketPath := flag.String("socket-path", "", "The unix socket path to connect to")
+
+	pingCmd := flag.NewFlagSet("ping", flag.ExitOnError)
+	pingDigest := pingCmd.String("digest", "", "The digest for the ping")
+
+	applyCmd := flag.NewFlagSet("apply", flag.ExitOnError)
 
 	if len(os.Args) < 2 {
 		log.Fatalf("expected a command")
@@ -136,14 +133,17 @@ func main() {
 	}
 
 	socketPath := DEFAULT_SOCKET_PATH
+	if *getSocketPath != "" {
+		socketPath = *getSocketPath
+	}
+
 	cmd := os.Args[1]
 	cmd_args := os.Args[2:]
 	switch cmd {
 	case "ping":
 		pingCmd.Parse(cmd_args)
-		if *getPingSocketPath != "" {
-			socketPath = *getPingSocketPath
-		}
+	case "apply":
+		applyCmd.Parse(cmd_args)
 	default:
 		invalidCommand(cmd)
 	}
@@ -158,20 +158,18 @@ func main() {
 
 	switch cmd {
 	case "ping":
-		sendPing(conn)
-		m, err := readMessage(conn)
-		if err != nil {
-			log.Fatalf("failed to read response: %v", err)
+		digest := "Hello World"
+		if *pingDigest != "" {
+			digest = *pingDigest
 		}
 
-		switch MessageKind(m.Kind) {
-		case Pong:
-			var payload PongPayload
-			if err := bson.Unmarshal(m.Data, &payload); err != nil {
-				log.Fatalf("failed to unmarhsal pong payload: %v", err)
-			}
-			fmt.Printf("pong: %s\n", string(payload.Digest))
+		fmt.Printf("ping >> %s\n", string(digest))
+		pong, err := ping(conn, []byte(digest))
+		if err != nil {
+			log.Fatalf("failed to pong server: %v", err)
 		}
+
+		fmt.Printf("pong << %s\n", string(pong))
 
 	default:
 		invalidCommand(cmd)
