@@ -1,7 +1,7 @@
 find_package(RapidJSON REQUIRED)
 find_package(ryml REQUIRED)
 
-add_library(vespa-manifest STATIC)
+add_library(vespa-manifest SHARED)
 
 add_subdirectory(include/)
 add_subdirectory(src/)

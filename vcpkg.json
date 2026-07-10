@@ -8,6 +8,7 @@
     "freetype",
     "libpng",
     "glm",
-    "libjpeg-turbo"
+    "libjpeg-turbo",
+    "libbson"
   ]
 }

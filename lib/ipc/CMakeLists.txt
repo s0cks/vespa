@@ -1,9 +1,10 @@
-add_library(vespa-ipc STATIC)
+find_package(bson CONFIG REQUIRED)
+
+add_library(vespa-ipc SHARED)
 target_link_libraries(vespa-ipc
-  PUBLIC vespa::protocol
-         vespa::core)
+  PUBLIC vespa::core
+         $<IF:$<TARGET_EXISTS:bson::static>,bson::static,bson::shared>)
+add_library(vespa::ipc ALIAS vespa-ipc)
 
 add_subdirectory(include/)
 add_subdirectory(src/)
-
-add_library(vespa::ipc ALIAS vespa-ipc)

@@ -1,0 +1,6 @@
+file(GLOB VESPA_RENDERER_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+
+target_sources(vespa-renderer
+  PUBLIC ${VESPA_RENDERER_SOURCES})
