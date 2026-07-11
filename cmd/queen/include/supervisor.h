@@ -1,6 +1,7 @@
 #ifndef VESPA_SUPERVISOR_H
 #define VESPA_SUPERVISOR_H
 
+#include <stdbool.h>
 #include <uv.h>
 
 typedef struct {

@@ -9,7 +9,7 @@
 #define DEFINE_READ(Name)  void Read##Name(bson_t* B, Name* p)
 
 DEFINE_WRITE(Event) {
-  BSON_APPEND_BINARY(B, "topic", BSON_SUBTYPE_BINARY, p->topic, p->topic_len);
+  BSON_APPEND_UTF8(B, "topic", p->topic);
 }
 
 DEFINE_WRITE(Ping) {
@@ -104,26 +104,17 @@ DEFINE_READ(Pong) {
 }
 
 DEFINE_READ(Event) {
-  //   bson_iter_t iter;
-  //   if (bson_iter_init(&iter, &b)) {
-  //     while (bson_iter_next(&iter)) {
-  //       const char* key = bson_iter_key(&iter);
-  //       bson_type_t type = bson_iter_type(&iter);
-  //
-  //       printf(" - Found key: '%s' ", key);
-  //
-  //       // Check types and extract values
-  //       if (type == BSON_TYPE_INT32) {
-  //         printf("(INT32) = %d\n", bson_iter_int32(&iter));
-  //       } else if (type == BSON_TYPE_UTF8) {
-  //         printf("(STRING) = %s\n", bson_iter_utf8(&iter, NULL));
-  //       } else if (type == BSON_TYPE_BOOL) {
-  //         printf("(BOOL) = %s\n", bson_iter_bool(&iter) ? "true" : "false");
-  //       } else {
-  //         printf("(Other Type)\n");
-  //       }
-  //     }
-  //   }
+  BEGIN_FIELD_ITERATOR(B, key, type)
+
+  if (strcmp(key, "topic") == 0) {
+    uint32_t len = 0;
+    const char* data = bson_iter_utf8(&iter, &len);
+    p->topic_len = len;
+    p->topic = malloc(sizeof(uint8_t) * len);
+    memcpy(p->topic, data, len);
+  }
+
+  END_FIELD_ITERATOR;
 }
 
 DEFINE_READ(Error) {

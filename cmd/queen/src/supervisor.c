@@ -1,5 +1,8 @@
 #include "supervisor.h"
 
+#include <stdio.h>
+#include <uv.h>
+
 int SupervisorRun(Supervisor* sp, const int mode) {
 #ifdef VESPA_DEBUG
   fprintf(stdout, "running supervisor...\n");

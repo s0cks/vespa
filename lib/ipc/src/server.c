@@ -56,6 +56,7 @@ static inline void OnWrite(uv_write_t* req, int status) {
 }
 
 static inline void OnRead(uv_stream_t* client, ssize_t nread, const uv_buf_t* buf) {
+  bool success = true;
   if (nread > 0) {
     Message* message = malloc(sizeof(Message));
     if (!ReadMessageFromBytes(message, (const uint8_t*)buf->base, nread)) {
@@ -67,27 +68,33 @@ static inline void OnRead(uv_stream_t* client, ssize_t nread, const uv_buf_t* bu
     IpcServer* server = c->owner;
     switch (message->kind) {
       case kPingKind: {
-        bool success = true;
         if (server->OnPing)
           success = server->OnPing(c, message);
-
-        if (!success) {
-          LOG_ERROR("failed to respond to ping");
-          exit(1);
-        }
-        break;
+        goto finished;
       }
-      case kPongKind: {
-        LOG_DEBUG("received pong");
-        break;
+      case kEventKind: {
+        bool success = true;
+        if (server->OnEvent)
+          success = server->OnEvent(c, message);
+        goto finished;
       }
       default:
-        LOG_ERROR("invalid message kind: %d", (int)message->kind);
+        break;
     }
+
+    success = false;
+    LOG_ERROR("invalid message kind: %d", (int)message->kind);
+    goto finished;
   } else if (nread < 0) {
     if (nread != UV_EOF)
       LOG_ERROR("read failure: %s", uv_err_name(nread));
     CloseClient((IpcServerClient*)client->data);
+  }
+
+finished:
+  if (!success) {
+    LOG_ERROR("failed to respond");
+    exit(1);
   }
 
   FreeBuffer(buf);

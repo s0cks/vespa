@@ -41,6 +41,34 @@ func sendPing(conn net.Conn, digest []byte) {
 	}
 }
 
+func sendEvent(conn net.Conn, topic string) (*ipc.EventPayload, error) {
+	event := ipc.EventPayload{
+		Topic: topic,
+	}
+
+	payload := struct {
+		Kind      int32            `bson:"kind"`
+		Timestamp time.Time        `bson:"timestamp"`
+		Data      ipc.EventPayload `bson:"data"`
+	}{
+		Kind:      int32(ipc.Event),
+		Timestamp: time.Now(),
+		Data:      event,
+	}
+
+	bsonBytes, err := bson.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal bson: %v", err)
+	}
+
+	_, err = conn.Write(bsonBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write to socket: %v", err)
+	}
+
+	return &event, nil
+}
+
 var ValidCommands = []string{
 	"ping",
 }
@@ -119,6 +147,10 @@ func ping(conn net.Conn, digest []byte) ([]byte, error) {
 	return pong.Digest, nil
 }
 
+func publish(conn net.Conn, topic string) (*ipc.EventPayload, error) {
+	return sendEvent(conn, topic)
+}
+
 func main() {
 	getSocketPath := flag.String("socket-path", "", "The unix socket path to connect to")
 
@@ -126,6 +158,9 @@ func main() {
 	pingDigest := pingCmd.String("digest", "", "The digest for the ping")
 
 	applyCmd := flag.NewFlagSet("apply", flag.ExitOnError)
+
+	publishCmd := flag.NewFlagSet("publish", flag.ExitOnError)
+	getPublishTopic := publishCmd.String("topic", "", "The topic to publish to")
 
 	if len(os.Args) < 2 {
 		log.Fatalf("expected a command")
@@ -144,6 +179,8 @@ func main() {
 		pingCmd.Parse(cmd_args)
 	case "apply":
 		applyCmd.Parse(cmd_args)
+	case "publish":
+		publishCmd.Parse(cmd_args)
 	default:
 		invalidCommand(cmd)
 	}
@@ -170,6 +207,20 @@ func main() {
 		}
 
 		fmt.Printf("pong << %s\n", string(pong))
+
+	case "publish":
+		topic := *getPublishTopic
+		if topic == "" {
+			fmt.Printf("cannot publish to an empty topic, use --topic\n")
+			os.Exit(1)
+		}
+
+		_, err := publish(conn, topic)
+		if err != nil {
+			log.Fatalf("failed to publish event: %v", err)
+		}
+
+		fmt.Printf("published event to %s\n", topic)
 
 	default:
 		invalidCommand(cmd)

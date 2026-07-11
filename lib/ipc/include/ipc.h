@@ -58,7 +58,8 @@ typedef enum {
   uint64_t Name##_len;
 
 struct _Event {
-  DECLARE_ARRAY_FIELD(topic);
+  char* topic;
+  uint64_t topic_len;
 };
 
 struct _Error {
@@ -98,7 +99,7 @@ FOR_EACH_MESSAGE_TYPE(DECLARE_WRITE_PAYLOAD)
 FOR_EACH_MESSAGE_TYPE(DECLARE_READ_PAYLOAD)
 #undef DECLARE_READ_PAYLOAD
 
-static inline void InitEventMessage(Message* m, uint8_t* topic, const uint64_t topic_len) {
+static inline void InitEventMessage(Message* m, char* topic, const uint64_t topic_len) {
   m->kind = kEventKind;
   m->timestamp = 1337;
   m->event.topic = topic;
@@ -135,8 +136,8 @@ bool IpcServerClientWrite(IpcServerClient* client, Message* msg);
 
 typedef struct _IpcServer {
   DEFINE_IPC_HANDLE_FIELDS;
-
   bool (*OnPing)(IpcServerClient*, Message*);
+  bool (*OnEvent)(IpcServerClient*, Message*);
 } IpcServer;
 
 bool IpcServerRun(IpcServer* server, const uv_run_mode mode);

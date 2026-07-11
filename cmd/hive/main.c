@@ -16,6 +16,16 @@ static inline char* DigestToStr(const uint8_t* bytes, const uint64_t nbytes) {
   return digest;
 }
 
+static inline bool OnEvent(IpcServerClient* client, Message* msg) {
+  char* topic = DigestToStr((const uint8_t*)msg->event.topic, msg->event.topic_len);
+  if (!topic)
+    return false;
+
+  LOG_INFO("received event in topic: %s", topic);
+  free(topic);
+  return true;
+}
+
 static inline bool OnPing(IpcServerClient* client, Message* message) {
   uint8_t* bytes = message->ping.digest;
   uint64_t nbytes = message->ping.digest_len;
@@ -40,6 +50,7 @@ int main(int argc, char** argv) {
   IpcServer server;
   IpcServerInit(&server, uv_loop_new());
   server.OnPing = &OnPing;
+  server.OnEvent = &OnEvent;
   IpcServerRunDefault(&server);
   IpcServerFree(&server);
 
