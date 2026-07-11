@@ -23,12 +23,13 @@ typedef enum {
 typedef struct {
   uv_process_t process;
   uv_process_options_t options;
+  SupervisorProcessState state;
 
   char* name;
-
   uint64_t num_restarts;
-  SupervisorProcessState state;
 } SupervisorProcess;
+
+bool SupervisorProcessInit(SupervisorProcess* proc);
 
 #define DEFINE_TYPE_CHECK(Name)                                           \
   static inline bool IsSupervisorProcess##Name(SupervisorProcess* proc) { \
@@ -40,6 +41,9 @@ FOR_EACH_SUPERVISOR_PROCESS_STATE(DEFINE_TYPE_CHECK)
 
 typedef struct {
   uv_loop_t* loop;
+
+  char* hive_bin;
+  SupervisorProcess hive;
 } Supervisor;
 
 bool SupervisorInit(Supervisor*);
