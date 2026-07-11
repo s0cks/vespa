@@ -10,6 +10,13 @@ static inline void OnChildExit(uv_process_t* req, int64_t exit_status, int term_
   uv_close((uv_handle_t*)req, NULL);
 }
 
+static inline bool SupervisorKillHive(Supervisor* sp, const int signal) {
+  // TODO(@s0cks): check state
+  fprintf(stdout, "terminating hive process...\n");
+  uv_process_kill(&sp->hive.process, signal);
+  uv_run(sp->loop, UV_RUN_NOWAIT);
+}
+
 static inline bool SupervisorSpawnHive(Supervisor* sp, SupervisorProcess* proc) {
   char* args[2];
   args[0] = sp->hive_bin;
@@ -29,47 +36,6 @@ static inline bool SupervisorSpawnHive(Supervisor* sp, SupervisorProcess* proc) 
 
   return true;
 }
-
-// #define WORKER_BIN "./worker"
-//
-// uv_loop_t *loop;
-// uv_fs_event_t fs_watcher;
-// uv_process_t child_req;
-// uv_process_options_t options;
-// int child_running = 0;
-//
-// // Forward declarations
-// void start_worker();
-// void kill_worker();
-//
-// // Callback when the child process exits
-//
-// // Callback when the worker binary is modified or replaced
-// void on_file_change(uv_fs_event_t *handle, const char *filename, int events, int status) {
-//     if (status < 0) return;
-//
-//     // Filter for the specific worker binary target
-//     if (filename && strcmp(filename, "worker") == 0) {
-//         printf("[Supervisor] %s changed! Hot reloading...\n", filename);
-//
-//         kill_worker();
-//         start_worker();
-//     }
-// }
-//
-// void start_worker() {
-// }
-//
-// void kill_worker() {
-//     if (!child_running) return;
-//
-//     printf("[Supervisor] Terminating old worker...\n");
-//     // Send SIGTERM for graceful exit, or SIGKILL (9) for instant termination
-//     uv_process_kill(&child_req, 15);
-//
-//     // Force loop to process the exit callback immediately before spawning next
-//     uv_run(loop, UV_RUN_NOWAIT);
-// }
 
 int SupervisorRun(Supervisor* sp, const int mode) {
 #ifdef VESPA_DEBUG
@@ -99,6 +65,7 @@ bool SupervisorInit(Supervisor* sp) {
     return false;
   }
 
+  SupervisorKillHive(sp, 15);
   return true;
 }
 
