@@ -12,6 +12,10 @@
 #define WORKER_WASM_RUNTIME_SIZE 8192
 #endif  // WORKER_WASM_RUNTIME_SIZE
 
+static inline void host_print(wasm_exec_env_t exec_env, const char* message, uint32_t message_len) {
+  printf("WASM: %.*s\n", message_len, message);
+}
+
 bool WorkerInit(Worker* worker, uint8_t* bytes, const uint64_t num_bytes) {
   bool success = false;
   char error_buf[WORKER_WASM_ERRBUF_SIZE];
@@ -27,6 +31,9 @@ bool WorkerInit(Worker* worker, uint8_t* bytes, const uint64_t num_bytes) {
     printf("error: failed to initialize WAMR runtime.\n");
     goto failed;
   }
+
+  static NativeSymbol native_symbols[] = {{"print_to_console", (void*)host_print, "(*~)", NULL}};
+  wasm_runtime_register_natives("env", native_symbols, 1);
 
   worker->wasm_module = wasm_runtime_load(bytes, num_bytes, error_buf, sizeof(error_buf));
   if (!worker->wasm_module) {

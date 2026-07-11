@@ -6,7 +6,7 @@ const c = @cImport({
 });
 
 const AppContext = struct {
-    count: u32 = 0,
+  count: u32 = 0,
 };
 
 fn timerCallback(handle: [*c]c.uv_timer_t) callconv(.c) void {

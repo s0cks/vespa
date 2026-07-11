@@ -31,16 +31,15 @@ finished:
   return result;
 }
 
-static inline bool add(wasm_exec_env_t* exec_env, wasm_module_inst_t* wasm_module_inst, const uint32_t a,
-                       const uint32_t b, uint32_t* result) {
+static inline bool init(wasm_exec_env_t* exec_env, wasm_module_inst_t* wasm_module_inst) {
   bool success = false;
-  uint32_t args[2];
-  args[0] = a;
-  args[1] = b;
+  // uint32_t args[2];
+  // args[0] = a;
+  // args[1] = b;
 
-  wasm_function_inst_t func = wasm_runtime_lookup_function(*wasm_module_inst, "add");
+  wasm_function_inst_t func = wasm_runtime_lookup_function(*wasm_module_inst, "init");
   if (func) {
-    if (!wasm_runtime_call_wasm(*exec_env, func, 2, args)) {
+    if (!wasm_runtime_call_wasm(*exec_env, func, 0, NULL)) {
       fprintf(stderr, "errror: WASM execution failed: %s\n", wasm_runtime_get_exception(*wasm_module_inst));
       goto errored;
     }
@@ -49,12 +48,10 @@ static inline bool add(wasm_exec_env_t* exec_env, wasm_module_inst_t* wasm_modul
   }
 
 cannot_find_func:
-  fprintf(stderr, "error: cannot find 'add' function in WASM module.\n");
+  fprintf(stderr, "error: cannot find 'init' function in WASM module.\n");
 errored:
-  (*result) = 0;
   goto finished;
 success:
-  (*result) = args[0];
   success = true;
 finished:
   return success;
@@ -81,7 +78,7 @@ int main(int argc, char** argv) {
   }
 
   uint32_t value = 0;
-  if (!add(&worker.wasm_exec_env, &worker.wasm_module_inst, 17, 15, &value)) {
+  if (!init(&worker.wasm_exec_env, &worker.wasm_module_inst)) {
     fprintf(stderr, "error: failed to add numbers\n");
     goto failed;
   }
