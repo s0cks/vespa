@@ -22,25 +22,20 @@ fn timerCallback(handle: [*c]c.uv_timer_t) callconv(.c) void {
   }
 }
 
-pub fn main(init: std.process.Init) !u8 {
-  const io = init.io;
-  try Io.File.stdout().writeStreamingAll(io, "Hello, world!\n");
-
+pub fn main( ) !u8 {
   var supervisor: c.Supervisor = undefined;
-
   if (!c.SupervisorInit(&supervisor)) {
     std.debug.print("error: failed to initialize supervisor\n", .{});
     return 1; // EXIT_FAILURE
   }
   defer c.SupervisorFree(&supervisor);
 
-  const loop_ptr: [*c]c.uv_loop_t = @ptrCast(supervisor.loop);
-
-  var timer: c.uv_timer_t = undefined;
-  _ = c.uv_timer_init(loop_ptr, &timer);
-  var ctx = AppContext{};
-  timer.data = &ctx;
-  _ = c.uv_timer_start(&timer, timerCallback, 1000, 500);
+  // const loop_ptr: [*c]c.uv_loop_t = @ptrCast(supervisor.loop);
+  // var timer: c.uv_timer_t = undefined;
+  // _ = c.uv_timer_init(loop_ptr, &timer);
+  // var ctx = AppContext{};
+  // timer.data = &ctx;
+  // _ = c.uv_timer_start(&timer, timerCallback, 1000, 500);
 
   const result = c.SupervisorRunDefault(&supervisor);
   if (result != 0) {

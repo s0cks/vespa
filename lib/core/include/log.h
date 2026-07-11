@@ -1,6 +1,8 @@
 #ifndef VESPA_LOG_H
 #define VESPA_LOG_H
 
+#include <stdarg.h>
+
 #define _LOG_TO_STREAM(Stream, format, ...) fprintf(Stream, "[%s:%d] " format "\n", __FILE__, __LINE__, ##__VA_ARGS__)
 
 #define LOG_INFO(format, ...)               _LOG_TO_STREAM(stdout, format, ##__VA_ARGS__)

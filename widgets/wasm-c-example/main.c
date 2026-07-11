@@ -1,9 +1,16 @@
-#include "sdk.h"
+#include "vespa_sdk.h"
 
-__attribute__((visibility("default"))) void init() {
-  print_to_console("Hello World", 11);
+VESPA_WIDGET_INIT() {
+  VespaPrint("init", 4);
+  return true;
 }
 
-__attribute__((visibility("default"))) void view() {}
+VESPA_WIDGET_VIEW() {
+  VespaPrint("view", 4);
+  return true;
+}
 
-__attribute__((visibility("default"))) void update() {}
+VESPA_WIDGET_UPDATE() {
+  VespaPrint("update", 6);
+  return true;
+}

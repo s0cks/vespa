@@ -1,11 +1,36 @@
 include(wasm3)
 
-add_executable(vespa-worker main.c)
+find_program(ZIG_EXECUTABLE zig REQUIRED)
 
-add_subdirectory(include/)
-add_subdirectory(src/)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT CMAKE_BUILD_TYPE)
+  set(ZIG_RELEASE_FLAG "") # Defaults to Debug
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+  set(ZIG_RELEASE_FLAG "-Doptimize=ReleaseSmall")
+elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  set(ZIG_RELEASE_FLAG "-Doptimize=ReleaseFast")
+endif()
 
-target_link_libraries(vespa-worker
-  PUBLIC vespa-core
-         vespa-wl
-         vespa-wamr)
+set(ZIG_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/zig-out")
+set(ZIG_TARGET_NAME "vespa-worker")
+if(WIN32)
+  set(ZIG_EXE_FILE "${ZIG_TARGET_NAME}.exe")
+else()
+  set(ZIG_EXE_FILE "${ZIG_TARGET_NAME}")
+endif()
+
+set(CMAKE_ZIG_OUTPUT_EXE "${CMAKE_CURRENT_BINARY_DIR}/bin/${ZIG_EXE_FILE}")
+
+add_custom_target(zig-vespa-worker-target ALL
+  COMMAND ${ZIG_EXECUTABLE} build ${ZIG_RELEASE_FLAG} -p "${CMAKE_CURRENT_BINARY_DIR}"
+  COMMAND mv "${CMAKE_ZIG_OUTPUT_EXE}" "${CMAKE_BINARY_DIR}/bin"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  BYPRODUCTS ${CMAKE_ZIG_OUTPUT_EXE}
+  COMMENT "Compiling Zig executable into CMake build tree..."
+  VERBATIM
+)
+
+set_property(DIRECTORY APPEND PROPERTY 
+  ADDITIONAL_CLEAN_FILES 
+  "${CMAKE_CURRENT_BINARY_DIR}/.zig-cache"
+  "${CMAKE_CURRENT_BINARY_DIR}/bin"
+)

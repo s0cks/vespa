@@ -1,4 +1,5 @@
 add_subdirectory(core/)
 add_subdirectory(ipc/)
 add_subdirectory(manifest/)
+add_subdirectory(render-ipc/)
 add_subdirectory(renderer/)
