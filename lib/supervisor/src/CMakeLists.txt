@@ -1,0 +1,5 @@
+file(GLOB VESPA_SUPERVISOR_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
+
+target_sources(vespa-supervisor
+  PUBLIC ${VESPA_SUPERVISOR_SOURCES})

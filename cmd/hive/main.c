@@ -4,7 +4,7 @@
 #include "ipc.h"
 #include "log.h"
 #include "manifest.h"
-#include "orchestrator.h"
+// #include "orchestrator.h"
 
 static inline char* DigestToStr(const uint8_t* bytes, const uint64_t nbytes) {
   char* digest = malloc(sizeof(char) * nbytes + 1);

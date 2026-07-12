@@ -40,15 +40,21 @@ FOR_EACH_SUPERVISOR_PROCESS_STATE(DEFINE_TYPE_CHECK)
 #undef DEFINE_TYPE_CHECK
 
 typedef struct {
-  uv_loop_t* loop;
-
   char* hive_bin;
+} SupervisorConfig;
+
+typedef struct {
+  uv_loop_t* loop;
+  SupervisorConfig config;
+
   SupervisorProcess hive;
 } Supervisor;
 
-bool SupervisorInit(Supervisor*);
+bool SupervisorRun(Supervisor* supervisor, const int mode);
+bool SupervisorInit(Supervisor*, SupervisorConfig*);
+bool SupervisorKillHive(Supervisor* sp, const int signal);
+bool SupervisorSpawnHive(Supervisor* sp, SupervisorProcess* proc);
 void SupervisorFree(Supervisor*);
-int SupervisorRun(Supervisor* supervisor, const int mode);
 
 static inline int SupervisorRunDefault(Supervisor* sp) {
   return SupervisorRun(sp, UV_RUN_DEFAULT);

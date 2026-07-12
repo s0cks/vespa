@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
   const optimize = b.standardOptimizeOption(.{});
 
   const exe = b.addExecutable(.{
-    .name = "vespa-queen",
+    .name = "vespa-hive",
     .root_module = b.createModule(.{
       .root_source_file = b.path("main.zig"),
       .target = target,
@@ -15,12 +15,9 @@ pub fn build(b: *std.Build) void {
   });
 
   exe.root_module.addIncludePath(b.path("include"));
-  exe.root_module.addIncludePath(b.path("../../lib/core/include"));
-  exe.root_module.addIncludePath(b.path("../../lib/supervisor/include"));
-
-  exe.root_module.addLibraryPath(b.path("../../build/lib"));
   exe.root_module.addCSourceFiles(.{
     .files = &.{
+      "src/supervisor.c",
     },
     .flags = &.{
       "-std=c23",
@@ -30,7 +27,5 @@ pub fn build(b: *std.Build) void {
   exe.root_module.linkSystemLibrary("z", .{});
   exe.root_module.linkSystemLibrary("pthread", .{});
   exe.root_module.linkSystemLibrary("uv", .{});
-  exe.root_module.linkSystemLibrary("vespa-core", .{});
-  exe.root_module.linkSystemLibrary("vespa-supervisor", .{});
   b.installArtifact(exe);
 }

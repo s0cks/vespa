@@ -17,7 +17,6 @@ pub fn build(b: *std.Build) void {
   exe.root_module.addIncludePath(b.path("include"));
   exe.root_module.addIncludePath(b.path("../../build/_deps/wamr-src/core/iwasm/include"));
   exe.root_module.addIncludePath(b.path("../../lib/core/include"));
-
   exe.root_module.addLibraryPath(b.path("../../build/lib"));
   exe.root_module.addCSourceFiles(.{
     .files = &.{
