@@ -30,7 +30,7 @@ pub fn main(init: std.process.Init) !u8 {
     std.debug.print("PATH variable is not set.\n", .{});
   }
 
-  const worker_path_slice = environ.get("VESPA_SUPERVISOR_WORKER_PATH");
+  const worker_path_slice = environ.get("VESPA_QUEEN_HIVE_PATH");
   var c_worker_path: [*c]u8 = null;
   if (worker_path_slice) |slice| {
     const mutable_copy = try init.gpa.dupeZ(u8, slice);
@@ -45,24 +45,15 @@ pub fn main(init: std.process.Init) !u8 {
   var config: c.SupervisorConfig = c.SupervisorConfig {
     .hive_bin = c_worker_path,
   };
-  var supervisor: c.Supervisor = undefined;
-  if (!c.SupervisorInit(&supervisor, &config)) {
-    std.debug.print("error: failed to initialize supervisor\n", .{});
-    return 1; // EXIT_FAILURE
-  }
-  defer c.SupervisorFree(&supervisor);
+  const supervisor_ptr: ?*c.Supervisor = c.NewSupervisor(&config);
+  const supervisor = supervisor_ptr orelse {
+    return error.CAllocationFailed;
+  };
+  defer c.SupervisorFree(supervisor);
 
-  // const loop_ptr: [*c]c.uv_loop_t = @ptrCast(supervisor.loop);
-  // var timer: c.uv_timer_t = undefined;
-  // _ = c.uv_timer_init(loop_ptr, &timer);
-  // var ctx = AppContext{};
-  // timer.data = &ctx;
-  // _ = c.uv_timer_start(&timer, timerCallback, 1000, 500);
-
-  const result = c.SupervisorRunDefault(&supervisor);
-  if (result != 0) {
-    const err_msg = c.uv_strerror(result);
-    std.debug.print("error: failed to run supervisor: {s}\n", .{err_msg});
+  const result = c.SupervisorRunDefault(supervisor);
+  if (!result) {
+    std.debug.print("error: failed to run supervisor.\n", .{});
     return 1; // EXIT_FAILURE
   }
 

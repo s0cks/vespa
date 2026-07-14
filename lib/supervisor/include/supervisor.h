@@ -43,28 +43,23 @@ typedef struct {
   char* hive_bin;
 } SupervisorConfig;
 
-typedef struct {
-  uv_loop_t* loop;
-  SupervisorConfig config;
+typedef struct _Supervisor Supervisor;
 
-  SupervisorProcess hive;
-} Supervisor;
-
+Supervisor* NewSupervisor(SupervisorConfig*);
 bool SupervisorRun(Supervisor* supervisor, const int mode);
-bool SupervisorInit(Supervisor*, SupervisorConfig*);
 bool SupervisorKillHive(Supervisor* sp, const int signal);
 bool SupervisorSpawnHive(Supervisor* sp, SupervisorProcess* proc);
 void SupervisorFree(Supervisor*);
 
-static inline int SupervisorRunDefault(Supervisor* sp) {
+static inline bool SupervisorRunDefault(Supervisor* sp) {
   return SupervisorRun(sp, UV_RUN_DEFAULT);
 }
 
-static inline int SupervisorRunNoWait(Supervisor* sp) {
+static inline bool SupervisorRunNoWait(Supervisor* sp) {
   return SupervisorRun(sp, UV_RUN_NOWAIT);
 }
 
-static inline int SupervisorRunOnce(Supervisor* sp) {
+static inline bool SupervisorRunOnce(Supervisor* sp) {
   return SupervisorRun(sp, UV_RUN_ONCE);
 }
 

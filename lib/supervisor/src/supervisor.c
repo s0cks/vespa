@@ -6,44 +6,49 @@
 #include <uv.h>
 
 #include "log.h"
+#include "supervisor_def.h"
 
-bool SupervisorRun(Supervisor* sp, const int mode) {
+Supervisor* NewSupervisor(SupervisorConfig* config) {
+  Supervisor* super = (Supervisor*)malloc(sizeof(Supervisor));
+  uv_loop_t* loop = uv_loop_new();
+  if (!loop)
+    goto init_failed0;
+  super->loop = loop;
+
+  memset(&super->config, 0, sizeof(SupervisorConfig));
+  if (config) {
+    memcpy(&super->config, config, sizeof(SupervisorConfig));
+    if (config->hive_bin)
+      super->config.hive_bin = strdup(config->hive_bin);
+  }
+
+  if (!super->config.hive_bin) {
+    LOG_ERROR("no hive executable superecified");
+    goto init_failed1;
+  }
+
+  goto finished;
+init_failed1:
+  uv_loop_delete(loop);
+init_failed0:
+  free(super);
+  super = NULL;
+finished:
+  return super;
+}
+
+bool SupervisorRun(Supervisor* super, const int mode) {
   LOG_DEBUG("running supervisor...");
-  const int status = uv_run(sp->loop, mode);
+  const int status = uv_run(super->loop, mode);
   // TODO(@s0cks): check status
   return status == 0;
 }
 
-bool SupervisorInit(Supervisor* sp, SupervisorConfig* config) {
-  uv_loop_t* loop = uv_loop_new();
-  if (!loop)
-    return false;
-  sp->loop = loop;
-
-  memset(&sp->config, 0, sizeof(SupervisorConfig));
-  if (config) {
-    memcpy(&sp->config, config, sizeof(SupervisorConfig));
-    if (config->hive_bin)
-      sp->config.hive_bin = strdup(config->hive_bin);
-  }
-
-  if (!sp->config.hive_bin) {
-    LOG_ERROR("no hive executable specified");
-    return true;
-  }
-
-  if (!SupervisorSpawnHive(sp, &sp->hive)) {
-    LOG_ERROR("failed to spawn hive process from: %s", sp->config.hive_bin);
-    return false;
-  }
-
-  SupervisorKillHive(sp, 15);
-  return true;
-}
-
-void SupervisorFree(Supervisor* sp) {
-  if (!sp)
+void SupervisorFree(Supervisor* super) {
+  if (!super)
     return;
-  if (sp->loop)
-    uv_loop_delete(sp->loop);
+  if (super->loop)
+    uv_loop_delete(super->loop);
+  if (super->config.hive_bin)
+    free(super->config.hive_bin);
 }
