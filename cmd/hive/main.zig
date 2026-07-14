@@ -9,19 +9,6 @@ const AppContext = struct {
   count: u32 = 0,
 };
 
-fn timerCallback(handle: [*c]c.uv_timer_t) callconv(.c) void {
-  const ctx: *AppContext = @ptrCast(@alignCast(handle.*.data));
-  ctx.count += 1;
-
-  std.debug.print("Timer ticked! Count: {d}\n", .{ctx.count});
-
-  if (ctx.count >= 3) {
-    std.debug.print("Stopping timer and closing handle.\n", .{});
-    _ = c.uv_timer_stop(handle);
-    c.uv_close(@ptrCast(handle), null); 
-  }
-}
-
 pub fn main(init: std.process.Init) !u8 {
   const environ = init.environ_map;
   if (environ.get("PATH")) |path| {

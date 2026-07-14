@@ -22,6 +22,11 @@ tasks:
       - task: cmake:configure
         vars:
           CMAKE_PRESET: "debug"
+  configure:release:
+    cmds:
+      - task: cmake:configure
+        vars:
+          CMAKE_PRESET: "release"
   build:
     cmds:
       - task: cmake:build-target

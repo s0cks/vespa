@@ -45,6 +45,22 @@
       "inherits": [
         "base"
       ]
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "value": "Release",
+          "type": "STRING"
+        }
+      },
+      "environment": {
+        "BUILD_ENVIRONMENT": "prod"
+      },
+      "inherits": [
+        "base"
+      ]
     }
   ],
   "buildPresets": [
@@ -52,6 +68,11 @@
       "name": "debug",
       "displayName": "Debug",
       "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "configurePreset": "release"
     }
   ]
 }

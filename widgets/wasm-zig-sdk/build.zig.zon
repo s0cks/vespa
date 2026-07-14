@@ -1,0 +1,7 @@
+.{
+  .name = .vespa_wasm_zig_sdk,
+  .version = "0.1.0",
+  .dependencies = .{ },
+  .paths = .{ "" },
+  .fingerprint = 0x479b30fb23bc725d,
+}

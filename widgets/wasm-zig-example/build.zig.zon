@@ -1,0 +1,11 @@
+.{
+  .name = .vespa_wasm_zig_example,
+  .version = "0.1.0",
+  .dependencies = .{
+    .wasm_zig_sdk = .{
+      .path = "../wasm-zig-sdk", 
+    },
+  },
+  .paths = .{ "" },
+  .fingerprint = 0x7dc2a98f7ba55cb1,
+}

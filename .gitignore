@@ -3,3 +3,4 @@ build/
 wiki/
 wayvk/
 *.tar.gz
+.zig-cache/

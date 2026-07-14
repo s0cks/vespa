@@ -1,6 +1,0 @@
-file(GLOB VESPA_WORKER_SOURCES
-  "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
-  "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
-
-target_sources(vespa-worker
-  PUBLIC "${VESPA_WORKER_SOURCES}")

@@ -1,0 +1,7 @@
+.{
+  .name = .vespa_worker,
+  .version = "0.1.0",
+  .dependencies = .{},
+  .paths = .{ "" },
+  .fingerprint = 0x9b5002f51ee9ecfc,
+}

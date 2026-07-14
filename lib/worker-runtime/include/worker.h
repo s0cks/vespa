@@ -2,29 +2,18 @@
 #define VESPA_WORKER_H
 
 #include <uv.h>
-#include <wasm_export.h>
 
-#ifndef WORKER_WASM_ERRBUF_SIZE
-#define WORKER_WASM_ERRBUF_SIZE 128
-#endif  // WORKER_WASM_ERRBUF_SIZE
-
-#ifndef WORKER_WASM_RUNTIME_SIZE
-#define WORKER_WASM_RUNTIME_SIZE 8192
-#endif  // WORKER_WASM_RUNTIME_SIZE
+#include "sandbox.h"
 
 typedef struct {
   uv_loop_t* loop;
   uv_idle_t idle;
   uv_check_t check;
-
-  wasm_module_t wasm_module;
-  wasm_module_inst_t wasm_module_inst;
-  wasm_exec_env_t wasm_exec_env;
-
+  Sandbox* sandbox;
   bool has_updates;
 } Worker;
 
-bool WorkerInit(Worker* worker);
+bool WorkerInit(Worker* worker, uv_loop_t*);
 bool WorkerLoadWasm(Worker* worker, const char* filename);
 bool WorkerWidgetInit(Worker* worker);
 bool WorkerWidgetView(Worker* worker);

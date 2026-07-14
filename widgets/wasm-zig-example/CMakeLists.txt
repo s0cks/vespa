@@ -1,5 +1,3 @@
-include(wasm3)
-
 find_program(ZIG_EXECUTABLE zig REQUIRED)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT CMAKE_BUILD_TYPE)
@@ -11,16 +9,16 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
 endif()
 
 set(ZIG_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/zig-out")
-set(ZIG_TARGET_NAME "vespa-worker")
+set(ZIG_TARGET_NAME "vespa-zig-example")
 if(WIN32)
   set(ZIG_EXE_FILE "${ZIG_TARGET_NAME}.exe")
 else()
   set(ZIG_EXE_FILE "${ZIG_TARGET_NAME}")
 endif()
 
-set(CMAKE_ZIG_OUTPUT_EXE "${CMAKE_CURRENT_BINARY_DIR}/bin/${ZIG_EXE_FILE}")
+set(CMAKE_ZIG_OUTPUT_EXE "${CMAKE_CURRENT_BINARY_DIR}/bin/${ZIG_EXE_FILE}.wasm")
 
-add_custom_target(zig-vespa-worker-target ALL
+add_custom_target(zig-vespa-wasm-zig-example ALL
   COMMAND ${ZIG_EXECUTABLE} build ${ZIG_RELEASE_FLAG} -p "${CMAKE_CURRENT_BINARY_DIR}"
   COMMAND mv "${CMAKE_ZIG_OUTPUT_EXE}" "${CMAKE_BINARY_DIR}/bin"
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -29,7 +27,7 @@ add_custom_target(zig-vespa-worker-target ALL
   VERBATIM
 )
 
-add_dependencies(zig-vespa-worker-target
+add_dependencies(zig-vespa-wasm-zig-example
   vespa-sandbox
   vespa-worker-runtime)
 
