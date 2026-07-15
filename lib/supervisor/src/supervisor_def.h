@@ -7,7 +7,7 @@ struct _Supervisor {
   uv_loop_t* loop;
   SupervisorConfig config;
 
-  SupervisorProcess hive;
+  SupervisedProcess** processes_;
 };
 
 #endif  // VESPA_SUPERVISOR_DEF_H

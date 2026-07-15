@@ -7,17 +7,15 @@
 
 typedef struct {
   uv_loop_t* loop;
+
   uv_idle_t idle;
   uv_check_t check;
-  Sandbox* sandbox;
   bool has_updates;
+
+  Sandbox* sandbox;
 } Worker;
 
-bool WorkerInit(Worker* worker, uv_loop_t*);
-bool WorkerLoadWasm(Worker* worker, const char* filename);
-bool WorkerWidgetInit(Worker* worker);
-bool WorkerWidgetView(Worker* worker);
-bool WorkerWidgetUpdate(Worker* worker);
+Worker* NewWorker(uv_loop_t* loop, const char* filename);
 bool WorkerRun(Worker* worker, const uv_run_mode mode);
 void WorkerFree(Worker* worker);
 

@@ -24,15 +24,6 @@
 #define IPC_FREE_FUNC free
 #endif  // IPC_FREE_FUNC
 
-#define CHECK_UV(Status, Message)                                         \
-  ({                                                                      \
-    const int status = (Status);                                          \
-    if (status != UV_OK) {                                                \
-      fprintf(stderr, "error: %s: %s\n", (Message), uv_strerror(status)); \
-      return;                                                             \
-    }                                                                     \
-  })
-
 #define FOR_EACH_MESSAGE_TYPE(V) \
   V(Event)                       \
   V(Error)                       \
@@ -148,6 +139,7 @@ void IpcServerFree(IpcServer* server);
   static inline bool IpcServerRun##Name(IpcServer* client) { \
     return IpcServerRun(client, (Mode));                     \
   }
+
 DEFINE_RUN_MODE(Default, UV_RUN_DEFAULT);
 DEFINE_RUN_MODE(NoWait, UV_RUN_NOWAIT);
 DEFINE_RUN_MODE(Once, UV_RUN_ONCE);

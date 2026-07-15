@@ -16,9 +16,14 @@
 struct _Sandbox {
   uv_loop_t* loop;
   void* data;
+
   wasm_module_t wasm_module;
   wasm_module_inst_t wasm_module_inst;
   wasm_exec_env_t wasm_exec_env;
+
+  wasm_function_inst_t init_func;
+  wasm_function_inst_t update_func;
+  wasm_function_inst_t view_func;
 };
 
 void InitSandboxBindings(Sandbox* box);
